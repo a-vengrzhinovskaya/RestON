@@ -1,0 +1,1 @@
+<template><div>Схема зала</div></template>

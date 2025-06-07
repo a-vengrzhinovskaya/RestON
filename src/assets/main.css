@@ -1,0 +1,22 @@
+:root {
+  --primary-color: #818cf8;
+  --primary-dark: #6366f1;
+  --text-color: #333;
+  --text-light: #666;
+  --border-color: #e0e0e0;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  color: var(--text-color);
+  line-height: 1.5;
+}
+
+button {
+  font-family: inherit;
+} 
