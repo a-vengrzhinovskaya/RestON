@@ -183,19 +183,33 @@
 <script setup lang="ts">
 import { ref, nextTick, computed } from 'vue'
 import PeriodModal from '@/components/PeriodModal.vue'
-const roles = ref<Array<{ name: string; categories: string; percent: string | number; salary: string; [key: string]: string | number }>>([
-  { name: 'Повар', categories: 'Кухня', percent: 10, salary: '17 400' },
-  { name: 'Официант', categories: '-', percent: '', salary: '10 250' },
-  { name: 'Бармен', categories: 'Напитки', percent: 15, salary: '30 400' },
-  { name: 'Уборщик', categories: '-', percent: '', salary: '5 577' },
-])
-const employees = ref<Array<{ name: string; birth: string; schedule: string; [key: string]: string }>>([
-  { name: 'Иванов Иван Иванович', birth: '05.05.1998', schedule: '5/2' },
-  { name: 'Осипов Илья Миронович', birth: '05.05.1998', schedule: '2/2' },
-  { name: 'Комаров Кирилл Ильич', birth: '05.05.1998', schedule: '2/2' },
-  { name: 'Евсеев Даниил Иванович', birth: '05.05.1998', schedule: '2/2' },
-  { name: 'Тун Анастасия Ивановна', birth: '05.05.1998', schedule: '5/2' },
-])
+
+function loadFromStorage<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key)
+    if (raw) return JSON.parse(raw)
+  } catch {}
+  return fallback
+}
+
+const roles = ref<Array<{ name: string; categories: string; percent: string | number; salary: string; [key: string]: string | number }>>(
+  loadFromStorage('staff_roles', [
+    { name: 'Повар', categories: 'Кухня', percent: 10, salary: '17 400' },
+    { name: 'Официант', categories: '-', percent: '', salary: '10 250' },
+    { name: 'Бармен', categories: 'Напитки', percent: 15, salary: '30 400' },
+    { name: 'Уборщик', categories: '-', percent: '', salary: '5 577' },
+  ])
+)
+
+const employees = ref<Array<{ name: string; birth: string; schedule: string; [key: string]: string }>>(
+  loadFromStorage('staff_employees', [
+    { name: 'Иванов Иван Иванович', birth: '05.05.1998', schedule: '5/2' },
+    { name: 'Осипов Илья Миронович', birth: '05.05.1998', schedule: '2/2' },
+    { name: 'Комаров Кирилл Ильич', birth: '05.05.1998', schedule: '2/2' },
+    { name: 'Евсеев Даниил Иванович', birth: '05.05.1998', schedule: '2/2' },
+    { name: 'Тун Анастасия Ивановна', birth: '05.05.1998', schedule: '5/2' },
+  ])
+)
 
 const editing = ref<{ type: string, idx: number, field: string }|null>(null)
 const editValue = ref('')
@@ -418,6 +432,8 @@ function finishEdit() {
   if (type === 'role') roles.value[idx][field] = val || ''
   else employees.value[idx][field] = val || ''
   editing.value = null
+  localStorage.setItem('staff_roles', JSON.stringify(roles.value))
+  localStorage.setItem('staff_employees', JSON.stringify(employees.value))
 }
 function cancelEdit() {
   editing.value = null
@@ -439,15 +455,19 @@ function displayValue(val: any, field?: string) {
 }
 function addRole() {
   roles.value.push({ name: '', categories: '', percent: '', salary: '' })
+  localStorage.setItem('staff_roles', JSON.stringify(roles.value))
 }
 function addEmployee() {
   employees.value.push({ name: '', birth: '', schedule: '' })
+  localStorage.setItem('staff_employees', JSON.stringify(employees.value))
 }
 function removeRole(idx: number) {
   roles.value.splice(idx, 1)
+  localStorage.setItem('staff_roles', JSON.stringify(roles.value))
 }
 function removeEmployee(idx: number) {
   employees.value.splice(idx, 1)
+  localStorage.setItem('staff_employees', JSON.stringify(employees.value))
 }
 const activeTab = ref(0)
 

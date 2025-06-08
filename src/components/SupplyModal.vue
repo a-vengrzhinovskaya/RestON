@@ -20,7 +20,7 @@
             <div class="input-group">
               <select v-model="item.name" @change="updateUnit(index, item.name)">
                 <option value="" disabled>Выберите позицию</option>
-                <option v-for="storeItem in availableItems" :key="storeItem.name" :value="storeItem.name">{{ storeItem.name }}</option>
+                <option v-for="ing in availableItems" :key="ing.name" :value="ing.name">{{ ing.name }}</option>
               </select>
             </div>
             <div class="input-group quantity">
@@ -55,6 +55,7 @@ import { useStorageStore } from '@/stores/storage'
 const props = defineProps<{
   isOpen: boolean
   date: Date
+  ingredientsList: Array<{ name: string; unit: string }>
 }>()
 
 const emit = defineEmits(['update:isOpen', 'save'])
@@ -62,7 +63,7 @@ const emit = defineEmits(['update:isOpen', 'save'])
 const store = useStorageStore()
 
 // Список всех доступных ингредиентов
-const availableItems = computed(() => store.items)
+const availableItems = computed(() => props.ingredientsList)
 
 // Выбранные элементы для поставки
 const selectedItems = ref<{
@@ -94,15 +95,15 @@ const removeItem = (index: number) => {
 
 // Обновление единицы измерения при выборе товара
 const updateUnit = (index: number, itemName: string) => {
-  const item = store.getItemByName(itemName)
+  const item = props.ingredientsList.find(i => i.name === itemName)
   if (item) {
-    selectedItems.value[index].unit = item.unit
+    selectedItems.value[index].unit = item.unit as 'шт' | 'кг' | 'л'
   }
 }
 
 // Получить единицу измерения по названию
 function getUnit(name: string): string {
-  const found = store.getItemByName(name)
+  const found = props.ingredientsList.find(i => i.name === name)
   return found ? found.unit : ''
 }
 
