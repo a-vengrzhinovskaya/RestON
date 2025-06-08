@@ -7,8 +7,9 @@
           v-model="localStartTime"
           :disabled="disabled"
           @change="emitChange"
+          ref="startInputRef"
         />
-        <span class="material-icons time-icon" :class="{ 'clickable': !disabled }">
+        <span v-if="props.showIcon !== false" class="material-icons time-icon clickable" @click="focusStartInput">
           schedule
         </span>
       </div>
@@ -19,8 +20,9 @@
           v-model="localEndTime"
           :disabled="disabled"
           @change="emitChange"
+          ref="endInputRef"
         />
-        <span class="material-icons time-icon" :class="{ 'clickable': !disabled }">
+        <span v-if="props.showIcon !== false" class="material-icons time-icon clickable" @click="focusEndInput">
           schedule
         </span>
       </div>
@@ -35,6 +37,7 @@ import 'material-icons/iconfont/material-icons.css'
 const props = defineProps<{
   modelValue: string
   disabled?: boolean
+  showIcon?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -46,6 +49,17 @@ const [initialStart = '13:00', initialEnd = '02:00'] = props.modelValue.split('-
 
 const localStartTime = ref(initialStart)
 const localEndTime = ref(initialEnd)
+
+// Refs for input elements
+const startInputRef = ref<HTMLInputElement | null>(null)
+const endInputRef = ref<HTMLInputElement | null>(null)
+
+const focusStartInput = () => {
+  if (!props.disabled) startInputRef.value?.focus()
+}
+const focusEndInput = () => {
+  if (!props.disabled) endInputRef.value?.focus()
+}
 
 // Watch for external changes
 watch(() => props.modelValue, (newValue) => {

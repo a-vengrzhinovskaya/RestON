@@ -95,12 +95,14 @@
   <WriteOffModal
     v-model:isOpen="isWriteOffModalOpen"
     :date="selectedStartDate"
+    :ingredients-list="menuIngredients"
     @save="handleWriteOffSave"
   />
 
   <SupplyModal
     v-model:isOpen="isSupplyModalOpen"
     :date="selectedStartDate"
+    :ingredients-list="menuIngredients"
     @save="handleSupplySave"
   />
 </template>
@@ -111,7 +113,7 @@ import PeriodModal from '@/components/PeriodModal.vue'
 import WriteOffModal from '@/components/WriteOffModal.vue'
 import SupplyModal from '@/components/SupplyModal.vue'
 import { useStorageStore } from '@/stores/storage'
-import { ingredients as menuIngredients } from '@/data/ingredients'
+import { ingredients as baseIngredients } from '@/data/ingredients'
 
 // Store
 const store = useStorageStore()
@@ -194,7 +196,7 @@ function syncIngredientsToStorage() {
   // Сохраняем старые количества и total по имени
   const oldMap = new Map(store.items.map(i => [i.name, i]))
   store.items.length = 0
-  menuIngredients.forEach(ing => {
+  baseIngredients.forEach(ing => {
     const old = oldMap.get(ing.name)
     store.items.push({
       name: ing.name,
@@ -207,7 +209,17 @@ function syncIngredientsToStorage() {
 // Первичная синхронизация
 syncIngredientsToStorage()
 // Следить за изменениями ингредиентов
-watch(menuIngredients, syncIngredientsToStorage, { deep: true })
+watch(baseIngredients, syncIngredientsToStorage, { deep: true })
+
+function loadFromStorage<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key)
+    if (raw) return JSON.parse(raw)
+  } catch {}
+  return fallback
+}
+
+const menuIngredients = loadFromStorage('editmenu_ingredients', baseIngredients)
 </script>
 
 <style scoped>

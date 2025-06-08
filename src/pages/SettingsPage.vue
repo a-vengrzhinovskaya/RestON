@@ -48,6 +48,7 @@
               <TimeRangeInput
                 v-model="formData.shift"
                 :disabled="!isEditing"
+                :show-icon="isEditing"
               />
             </div>
 
@@ -110,7 +111,7 @@ const formData = reactive({
   phone: '8 900 322 45-45',
   shift: '13:00-02:00',
   email: 'demo@gmail.com',
-  password: '••••••••••••••'
+  password: 'Password123'
 })
 
 const toggleEdit = () => {
