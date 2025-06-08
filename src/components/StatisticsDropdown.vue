@@ -2,7 +2,7 @@
   <div class="dropdown-container">
     <button 
       class="dropdown-trigger"
-      :class="{ active: isOpen || currentSection === '' }"
+      :class="{ active: isOpen || isSectionActive }"
       @click="toggleDropdown"
     >
       Статистика {{ isOpen ? '↑' : '↓' }}
@@ -54,6 +54,14 @@ const currentSection = computed(() => {
   return ''
 })
 
+const isSectionActive = computed(() => {
+  return [
+    '/dashboard/cash-shifts',
+    '/dashboard/closed-checks',
+    '/dashboard/sales'
+  ].some(prefix => route.path.startsWith(prefix))
+})
+
 const isOpen = computed(() => isDropdownOpen(DROPDOWN_NAME))
 
 const toggleDropdown = () => {
@@ -75,15 +83,19 @@ const selectItem = (section: string) => {
   border: none;
   color: #1a1a1a;
   font-size: 1rem;
-  padding: 0.5rem;
+  padding: 0.5rem 1.25rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  border-radius: 8px;
+  transition: background 0.2s, color 0.2s;
 }
 
 .dropdown-trigger.active {
   color: #4338ca;
+  background: #e0e7ff;
+  font-weight: 600;
 }
 
 .dropdown-menu {
