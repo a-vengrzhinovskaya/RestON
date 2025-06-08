@@ -1,4 +1,4 @@
-# Admin Dashboard (Frontend)
+# RestON Администратор
 
 Запуск:
 ```

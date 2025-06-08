@@ -10,7 +10,7 @@
     
     <div v-if="isOpen" class="dropdown-menu">
       <router-link 
-        to="/menu/storage"
+        to="/dashboard/menu/storage"
         class="dropdown-item"
         :class="{ active: currentSection === 'storage' }"
         @click="selectItem('storage')"
@@ -18,7 +18,7 @@
         Склад
       </router-link>
       <router-link 
-        to="/menu/edit"
+        to="/dashboard/menu/edit"
         class="dropdown-item"
         :class="{ active: currentSection === 'edit' }"
         @click="selectItem('edit')"
@@ -30,16 +30,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useDropdownState } from '@/composables/useDropdownState'
 
 const DROPDOWN_NAME = 'menu'
 const route = useRoute()
 const { isDropdownOpen, openDropdown } = useDropdownState()
+
 const currentSection = computed(() => {
   const path = route.path
-  if (path.startsWith('/menu/')) {
+  if (path.includes('/menu/')) {
     return path.split('/').pop() || ''
   }
   return ''

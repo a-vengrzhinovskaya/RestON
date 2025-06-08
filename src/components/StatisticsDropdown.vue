@@ -38,13 +38,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useDropdownState } from '@/composables/useDropdownState'
 
 const DROPDOWN_NAME = 'statistics'
 const route = useRoute()
 const { isDropdownOpen, openDropdown } = useDropdownState()
+
 const currentSection = computed(() => {
   const path = route.path
   if (path.startsWith('/dashboard/')) {

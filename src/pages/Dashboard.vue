@@ -32,9 +32,7 @@
 
     <!-- Main content -->
     <main class="main-content">
-      <router-view v-slot="{ Component }">
-        <component :is="Component" />
-      </router-view>
+      <router-view></router-view>
     </main>
   </div>
 </template>
