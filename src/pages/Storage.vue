@@ -60,17 +60,22 @@
             <div>ДАТА</div>
             <div>ИТОГО</div>
           </div>
-          <div v-for="movement in store.filteredMovements" :key="movement.id" class="movement-item">
-            <div class="movement-details">
-              <span :class="['movement-indicator', movement.type]">{{ movement.type === 'in' ? '+' : '-' }}</span>
-              <span class="movement-name">{{ movement.name }}</span>
-              <span class="movement-quantity">{{ movement.quantity }}</span>
+          <template v-if="store.getMovementsByDate(selectedStartDate).length">
+            <div v-for="movement in store.getMovementsByDate(selectedStartDate)" :key="movement.id" class="movement-item">
+              <div class="movement-details">
+                <span :class="['movement-indicator', movement.type]">{{ movement.type === 'in' ? '+' : '-' }}</span>
+                <span class="movement-name">{{ movement.name }}</span>
+                <span class="movement-quantity">{{ movement.quantity }}</span>
+              </div>
+              <div class="movement-date">{{ movement.date }}</div>
+              <div :class="['movement-total', movement.type]">
+                {{ movement.type === 'in' ? '+' : '-' }}{{ movement.total }} ₽
+              </div>
             </div>
-            <div class="movement-date">{{ movement.date }}</div>
-            <div :class="['movement-total', movement.type]">
-              {{ movement.type === 'in' ? '+' : '-' }}{{ movement.total }} ₽
-            </div>
-          </div>
+          </template>
+          <template v-else>
+            <div class="no-movements">В этот день не было поставок или списаний.</div>
+          </template>
         </div>
 
         <div class="action-buttons">
@@ -101,11 +106,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import PeriodModal from '@/components/PeriodModal.vue'
 import WriteOffModal from '@/components/WriteOffModal.vue'
 import SupplyModal from '@/components/SupplyModal.vue'
 import { useStorageStore } from '@/stores/storage'
+import { ingredients as menuIngredients } from '@/data/ingredients'
 
 // Store
 const store = useStorageStore()
@@ -182,6 +188,26 @@ const isSameDay = (date1: Date, date2: Date) => {
          date1.getMonth() === date2.getMonth() && 
          date1.getFullYear() === date2.getFullYear()
 }
+
+// --- Синхронизация остатков с ингредиентами меню ---
+function syncIngredientsToStorage() {
+  // Сохраняем старые количества и total по имени
+  const oldMap = new Map(store.items.map(i => [i.name, i]))
+  store.items.length = 0
+  menuIngredients.forEach(ing => {
+    const old = oldMap.get(ing.name)
+    store.items.push({
+      name: ing.name,
+      unit: ing.unit as 'кг' | 'шт' | 'л',
+      quantity: old ? old.quantity : 0,
+      total: old ? old.total : 0
+    })
+  })
+}
+// Первичная синхронизация
+syncIngredientsToStorage()
+// Следить за изменениями ингредиентов
+watch(menuIngredients, syncIngredientsToStorage, { deep: true })
 </script>
 
 <style scoped>
@@ -235,6 +261,10 @@ const isSameDay = (date1: Date, date2: Date) => {
 
 .items-list {
   margin-bottom: 1.5rem;
+  min-height: 480px;
+  max-height: 480px;
+  height: 480px;
+  overflow: hidden;
 }
 
 .item-row {
@@ -396,5 +426,12 @@ const isSameDay = (date1: Date, date2: Date) => {
 
 .btn-primary:hover {
   opacity: 0.9;
+}
+
+.no-movements {
+  color: #6c757d;
+  text-align: center;
+  padding: 2.5rem 0;
+  font-size: 1.05rem;
 }
 </style> 

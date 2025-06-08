@@ -1,42 +1,47 @@
 <template>
-  <div v-if="isOpen" class="modal-overlay">
-    <div class="modal-content">
+  <div v-if="isOpen" class="modal-overlay" @click="closeModal">
+    <div class="modal-content" @click.stop>
       <div class="modal-header">
-        <h2>Поставка</h2>
+        <h3>Поставка от</h3>
         <div class="date-display">
           <span class="calendar-icon">📅</span>
           {{ formatDate(date) }}
         </div>
-        <button class="close-btn" @click="handleClose">×</button>
+        <button class="close-btn" @click="closeModal">×</button>
       </div>
-      <div class="modal-body">
+      <div class="form-content">
+        <div class="form-header">
+          <div class="column">ПОЗИЦИИ</div>
+          <div class="column">КОЛИЧЕСТВО</div>
+          <div class="column">СТОИМОСТЬ</div>
+        </div>
         <div class="form-rows">
           <div v-for="(item, index) in selectedItems" :key="index" class="form-row">
             <div class="input-group">
-              <input type="text" v-model="item.name" placeholder="Название" @change="updateUnit(index, item.name)" />
-            </div>
-            <div class="input-group quantity">
-              <input type="number" v-model="item.quantity" placeholder="0" />
-              <select v-model="item.unit" class="unit-select">
-                <option value="шт">шт</option>
-                <option value="кг">кг</option>
-                <option value="л">л</option>
+              <select v-model="item.name" @change="updateUnit(index, item.name)">
+                <option value="" disabled>Выберите позицию</option>
+                <option v-for="storeItem in availableItems" :key="storeItem.name" :value="storeItem.name">{{ storeItem.name }}</option>
               </select>
             </div>
-            <div class="input-group price">
-              <input type="number" v-model="item.price" placeholder="0" />
-              <span class="currency">₽</span>
+            <div class="input-group quantity">
+              <input type="number" v-model.number="item.quantity" min="0" placeholder="0" />
+              <span class="unit-label">{{ getUnit(item.name) }}</span>
             </div>
-            <button class="remove-btn" @click="removeItem(index)" v-if="selectedItems.length > 1">×</button>
+            <div class="input-group price">
+              <input type="number" v-model.number="item.price" min="0" placeholder="0" inputmode="decimal" style="appearance: textfield;" />
+              <span class="unit-label">₽</span>
+            </div>
+            <button class="delete-btn" @click="removeItem(index)">
+              <span class="material-icons delete-icon">delete</span>
+            </button>
           </div>
         </div>
-        <button class="add-btn" @click="addItem">+ Добавить</button>
-      </div>
-      <div class="modal-footer">
-        <div class="total">Итого: {{ formatTotal }}</div>
-        <div class="actions">
-          <button class="cancel-btn" @click="handleClose">Отмена</button>
-          <button class="save-btn" @click="handleSave">Сохранить</button>
+        <button class="add-field-btn" @click="addItem">+ Добавить поле</button>
+        <div class="form-footer">
+          <div class="total">
+            Итого: <span class="amount">{{ formatTotal }}</span>
+          </div>
+          <button class="save-btn" @click="save">Сохранить</button>
         </div>
       </div>
     </div>
@@ -95,6 +100,12 @@ const updateUnit = (index: number, itemName: string) => {
   }
 }
 
+// Получить единицу измерения по названию
+function getUnit(name: string): string {
+  const found = store.getItemByName(name)
+  return found ? found.unit : ''
+}
+
 // Сохранение поставки
 const handleSave = () => {
   emit('save', {
@@ -119,9 +130,18 @@ const formatTotal = computed(() => {
   const total = totalAmount.value
   return `${total} ₽`
 })
+
+const closeModal = () => {
+  handleClose()
+}
+
+const save = () => {
+  handleSave()
+}
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -138,8 +158,8 @@ const formatTotal = computed(() => {
 .modal-content {
   background: white;
   border-radius: 12px;
-  width: 800px;
-  max-width: 90vw;
+  width: 700px;
+  max-width: 95vw;
 }
 
 .modal-header {
@@ -150,7 +170,7 @@ const formatTotal = computed(() => {
   border-bottom: 1px solid #e5e7eb;
 }
 
-.modal-header h2 {
+.modal-header h3 {
   font-size: 1.25rem;
   font-weight: 600;
   color: #111827;
@@ -183,8 +203,17 @@ const formatTotal = computed(() => {
   padding: 0.5rem;
 }
 
-.modal-body {
+.form-content {
   padding: 1.5rem;
+}
+
+.form-header {
+  display: grid;
+  grid-template-columns: 1fr 200px 120px 40px;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  color: #6b7280;
+  font-size: 0.75rem;
 }
 
 .form-rows {
@@ -196,109 +225,133 @@ const formatTotal = computed(() => {
 
 .form-row {
   display: grid;
-  grid-template-columns: 1fr 200px 150px 40px;
+  grid-template-columns: 1fr 200px 120px 40px;
   gap: 1rem;
   align-items: center;
 }
 
-.input-group input {
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.input-group input, .input-group select {
   width: 100%;
   padding: 0.75rem;
   border: 1px solid #e5e7eb;
   border-radius: 6px;
   font-size: 0.875rem;
-}
-
-.input-group.quantity {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.5rem;
-}
-
-.unit-select {
-  padding: 0.75rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  background: white;
+  background: #fff;
   color: #1a1a1a;
-  cursor: pointer;
+  outline: none;
+  box-sizing: border-box;
+  transition: border 0.2s;
+  height: 44px;
+  appearance: none;
+  display: block;
 }
-
+.input-group input:focus, .input-group select:focus {
+  border-color: #4338ca;
+}
+.input-group input::-ms-expand, .input-group select::-ms-expand {
+  display: none;
+}
+/* Для выравнивания селектора с input */
+.input-group select {
+  margin: 0;
+}
+/* Значок рубля внутри поля стоимости */
 .input-group.price {
   position: relative;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.5rem;
+  display: flex;
+  align-items: center;
 }
-
-.currency {
+.input-group.price input {
+  padding-right: 2.2em;
+}
+.input-group.price .unit-label {
   position: absolute;
-  right: 10px;
+  right: 0.9em;
   top: 50%;
   transform: translateY(-50%);
-  color: #6b7280;
-  font-size: 0.875rem;
+  margin: 0;
+  color: #6B7280;
+  font-size: 0.95em;
+  min-width: 1.5em;
+  pointer-events: none;
+  display: block;
 }
-
-.remove-btn {
+.unit-label {
+  margin-left: 0.5em;
+  color: #6B7280;
+  font-size: 0.95em;
+  min-width: 2em;
+  display: inline-block;
+}
+.delete-btn {
   background: none;
   border: none;
-  color: #6b7280;
+  color: #b0b0b0;
+  font-size: 20px;
   cursor: pointer;
+  transition: color 0.2s;
+  user-select: none;
   padding: 0.5rem;
 }
-
-.add-btn {
+.delete-btn:hover {
+  color: #ef4444;
+}
+.add-field-btn {
   background: none;
   border: none;
   color: #4338ca;
   font-size: 0.875rem;
   cursor: pointer;
   padding: 0;
-  margin-bottom: 1.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  transition: color 0.2s;
 }
-
-.modal-footer {
+.add-field-btn:hover {
+  color: #3730a3;
+}
+.form-footer {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e5e7eb;
+  justify-content: space-between;
+  margin-top: 1.5rem;
 }
-
 .total {
   font-size: 0.875rem;
   color: #374151;
 }
-
-.actions {
-  display: flex;
-  gap: 0.75rem;
+.amount {
+  font-weight: 600;
+  color: #111827;
 }
-
-.cancel-btn {
-  background: none;
-  border: none;
-  color: #6b7280;
-  font-size: 0.875rem;
-  cursor: pointer;
-  padding: 0;
-}
-
 .save-btn {
   background: #4338ca;
-  color: white;
+  color: #fff;
   border: none;
-  border-radius: 6px;
-  padding: 0.75rem 1.5rem;
-  font-size: 0.875rem;
+  border-radius: 8px;
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
+  margin-bottom: 0;
+  margin-left: auto;
+  transition: background 0.2s;
 }
-
 .save-btn:hover {
-  opacity: 0.9;
+  background: #3730a3;
+}
+/* Убрать стрелки у input[type=number] для стоимости */
+.input-group.price input[type=number]::-webkit-outer-spin-button,
+.input-group.price input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.input-group.price input[type=number] {
+  -moz-appearance: textfield;
 }
 </style> 

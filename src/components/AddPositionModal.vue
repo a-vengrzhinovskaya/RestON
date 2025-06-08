@@ -112,7 +112,10 @@ const expanded = ref<number[]>([]); // Индексы раскрытых поз�
 
 watch(() => props.modelValue, (val) => {
   if (val) {
-    positions.value = props.items.map(i => ({ ...i, ingredients: i.ingredients ? i.ingredients.map(ing => ({ ...ing })) : [] }));
+    positions.value = props.items.map(i => ({ 
+      ...i, 
+      ingredients: i.ingredients ? i.ingredients.map(ing => ({ ...ing })) : [] 
+    }));
     if (positions.value.length === 0) {
       positions.value = [{ name: '', category: props.categories[0] || '', price: 0, ingredients: [] }];
     }
