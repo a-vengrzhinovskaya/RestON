@@ -1,7 +1,7 @@
 <template>
   <BaseModal :model-value="modelValue" @update:model-value="emit('update:modelValue', $event)" title="Добавление категорий">
     <div class="add-category-form">
-      <div v-for="(item, index) in categories" :key="index" class="category-row">
+      <div v-for="(item, index) in paginatedCategories" :key="index" class="category-row">
         <div class="input-group">
           <label>НАЗВАНИЕ</label>
           <input 
@@ -13,6 +13,12 @@
         <button class="delete-button" @click="removeCategory(index)">
           <span class="material-icons">delete</span>
         </button>
+      </div>
+
+      <div class="modal-pagination">
+        <button class="pagination-arrow" :disabled="currentPage === 1" @click="currentPage--">&lt;</button>
+        <span class="page-info">{{ currentPage }}/{{ totalPages }}</span>
+        <button class="pagination-arrow" :disabled="currentPage === totalPages" @click="currentPage++">&gt;</button>
       </div>
 
       <button class="add-field-button" @click="addCategory">
@@ -27,11 +33,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch, computed } from 'vue'
 import BaseModal from './BaseModal.vue'
 
 const props = defineProps<{
-  modelValue: boolean
+  modelValue: boolean,
+  items: Array<{ name: string }>
 }>();
 
 const emit = defineEmits<{
@@ -43,22 +50,49 @@ interface Category {
   name: string;
 }
 
-const categories = ref<Category[]>([
-  { name: '' }
-]);
+const categories = ref<Category[]>([]);
+const ITEMS_PER_PAGE = 3;
+const currentPage = ref(1);
+
+watch(() => props.modelValue, (val) => {
+  if (val) {
+    categories.value = props.items.map(i => ({ ...i }));
+    if (categories.value.length === 0) {
+      categories.value = [{ name: '' }];
+    }
+    currentPage.value = 1;
+  }
+});
+
+const paginatedCategories = computed(() => {
+  const start = (currentPage.value - 1) * ITEMS_PER_PAGE;
+  const end = start + ITEMS_PER_PAGE;
+  return categories.value.slice(start, end);
+});
+
+const totalPages = computed(() => Math.ceil(categories.value.length / ITEMS_PER_PAGE));
 
 const addCategory = () => {
   categories.value.push({ name: '' });
+  if (paginatedCategories.value.length === 0 && currentPage.value < totalPages.value) {
+    currentPage.value = totalPages.value;
+  }
 };
 
 const removeCategory = (index: number) => {
-  categories.value.splice(index, 1);
+  const globalIndex = (currentPage.value - 1) * ITEMS_PER_PAGE + index;
+  categories.value.splice(globalIndex, 1);
+  if (currentPage.value > totalPages.value) {
+    currentPage.value = totalPages.value;
+  }
+  if (categories.value.length === 0) {
+    addCategory();
+  }
 };
 
 const save = () => {
   emit('save', categories.value);
   emit('update:modelValue', false);
-  categories.value = [{ name: '' }];
 };
 </script>
 
@@ -153,5 +187,35 @@ input:focus {
 
 .save-button:hover {
   background: #3730a3;
+}
+
+.modal-pagination {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+.pagination-arrow {
+  background: none;
+  border: none;
+  color: #4338ca;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pagination-arrow:disabled {
+  color: #d1d5db;
+  cursor: not-allowed;
+}
+.page-info {
+  color: #1a1a1a;
+  font-weight: 500;
+  font-size: 0.875rem;
+  min-width: 2.5rem;
+  text-align: center;
 }
 </style> 

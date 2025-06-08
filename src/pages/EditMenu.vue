@@ -139,17 +139,21 @@
     <!-- Модальные окна -->
     <AddIngredientModal
       v-model="showIngredientModal"
+      :items="ingredients"
       @save="handleSaveIngredients"
     />
     
     <AddPositionModal
       v-model="showPositionModal"
+      :items="positions"
       :categories="categories.map(c => c.name)"
+      :ingredients-list="ingredients"
       @save="handleSavePositions"
     />
     
     <AddCategoryModal
       v-model="showCategoryModal"
+      :items="categories"
       @save="handleSaveCategories"
     />
   </div>
@@ -296,32 +300,17 @@ const paginatedCategories = computed(() => {
 })
 
 // Обработчики сохранения
-const handleSaveIngredients = (newIngredients: Array<{ name: string; unit: string }>) => {
-  const lastId = ingredients.value.length > 0 ? Math.max(...ingredients.value.map(i => i.id)) : 0;
-  const ingredientsWithIds = newIngredients.map((ingredient, index) => ({
-    ...ingredient,
-    id: lastId + index + 1
-  }));
-  ingredients.value.push(...ingredientsWithIds);
-}
+const handleSaveIngredients = (newIngredients: Ingredient[]) => {
+  ingredients.value = newIngredients;
+};
 
-const handleSavePositions = (newPositions: Array<{ name: string; category: string; price: number }>) => {
-  const lastId = positions.value.length > 0 ? Math.max(...positions.value.map(p => p.id)) : 0;
-  const positionsWithIds = newPositions.map((position, index) => ({
-    ...position,
-    id: lastId + index + 1
-  }));
-  positions.value.push(...positionsWithIds);
-}
+const handleSavePositions = (newPositions: Position[]) => {
+  positions.value = newPositions;
+};
 
-const handleSaveCategories = (newCategories: Array<{ name: string }>) => {
-  const lastId = categories.value.length > 0 ? Math.max(...categories.value.map(c => c.id)) : 0;
-  const categoriesWithIds = newCategories.map((category, index) => ({
-    ...category,
-    id: lastId + index + 1
-  }));
-  categories.value.push(...categoriesWithIds);
-}
+const handleSaveCategories = (newCategories: Category[]) => {
+  categories.value = newCategories;
+};
 </script>
 
 <style scoped>

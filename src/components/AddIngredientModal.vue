@@ -1,7 +1,7 @@
 <template>
   <BaseModal :model-value="modelValue" @update:model-value="emit('update:modelValue', $event)" title="Добавление ингредиентов">
     <div class="add-ingredient-form">
-      <div v-for="(item, index) in ingredients" :key="index" class="ingredient-row">
+      <div v-for="(item, index) in paginatedIngredients" :key="index" class="ingredient-row">
         <div class="input-group">
           <label>НАЗВАНИЕ</label>
           <input 
@@ -23,6 +23,12 @@
         </button>
       </div>
 
+      <div class="modal-pagination">
+        <button class="pagination-arrow" :disabled="currentPage === 1" @click="currentPage--">&lt;</button>
+        <span class="page-info">{{ currentPage }}/{{ totalPages }}</span>
+        <button class="pagination-arrow" :disabled="currentPage === totalPages" @click="currentPage++">&gt;</button>
+      </div>
+
       <button class="add-field-button" @click="addIngredient">
         + Добавить поле
       </button>
@@ -35,11 +41,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch, computed } from 'vue'
 import BaseModal from './BaseModal.vue'
 
 const props = defineProps<{
-  modelValue: boolean
+  modelValue: boolean,
+  items: Array<{ name: string; unit: string }>
 }>();
 
 const emit = defineEmits<{
@@ -52,22 +59,49 @@ interface Ingredient {
   unit: string;
 }
 
-const ingredients = ref<Ingredient[]>([
-  { name: '', unit: 'кг' }
-]);
+const ingredients = ref<Ingredient[]>([]);
+const ITEMS_PER_PAGE = 3;
+const currentPage = ref(1);
+
+watch(() => props.modelValue, (val) => {
+  if (val) {
+    ingredients.value = props.items.map(i => ({ ...i }));
+    if (ingredients.value.length === 0) {
+      ingredients.value = [{ name: '', unit: 'кг' }];
+    }
+    currentPage.value = 1;
+  }
+});
+
+const paginatedIngredients = computed(() => {
+  const start = (currentPage.value - 1) * ITEMS_PER_PAGE;
+  const end = start + ITEMS_PER_PAGE;
+  return ingredients.value.slice(start, end);
+});
+
+const totalPages = computed(() => Math.ceil(ingredients.value.length / ITEMS_PER_PAGE));
 
 const addIngredient = () => {
   ingredients.value.push({ name: '', unit: 'кг' });
+  if (paginatedIngredients.value.length === 0 && currentPage.value < totalPages.value) {
+    currentPage.value = totalPages.value;
+  }
 };
 
 const removeIngredient = (index: number) => {
-  ingredients.value.splice(index, 1);
+  const globalIndex = (currentPage.value - 1) * ITEMS_PER_PAGE + index;
+  ingredients.value.splice(globalIndex, 1);
+  if (currentPage.value > totalPages.value) {
+    currentPage.value = totalPages.value;
+  }
+  if (ingredients.value.length === 0) {
+    addIngredient();
+  }
 };
 
 const save = () => {
   emit('save', ingredients.value);
   emit('update:modelValue', false);
-  ingredients.value = [{ name: '', unit: 'кг' }];
 };
 </script>
 
@@ -162,5 +196,35 @@ input:focus, select:focus {
 
 .save-button:hover {
   background: #3730a3;
+}
+
+.modal-pagination {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+.pagination-arrow {
+  background: none;
+  border: none;
+  color: #4338ca;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pagination-arrow:disabled {
+  color: #d1d5db;
+  cursor: not-allowed;
+}
+.page-info {
+  color: #1a1a1a;
+  font-weight: 500;
+  font-size: 0.875rem;
+  min-width: 2.5rem;
+  text-align: center;
 }
 </style> 
