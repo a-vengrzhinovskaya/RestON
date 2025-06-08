@@ -17,14 +17,28 @@
 
     <!-- Navigation bar -->
     <nav class="navbar">
-      <div class="restaurant-name">DonerHome</div>
+      <div class="restaurant-name" @dblclick="startRename" style="min-width: 120px;">
+        <template v-if="isRenaming">
+          <input
+            v-model="restaurantNameInput"
+            ref="renameInputRef"
+            class="rename-restaurant-input"
+            @blur="finishRename"
+            @keydown.enter.prevent="finishRename"
+            @keydown.esc.prevent="cancelRename"
+          />
+        </template>
+        <template v-else>
+          {{ restaurantName }}
+        </template>
+      </div>
       <div class="nav-links">
         <StatisticsDropdown />
         <MenuDropdown />
-        <router-link to="/hall" class="nav-link">
+        <router-link to="/dashboard/hall" class="nav-link" active-class="active">
           Схема зала
         </router-link>
-        <router-link to="/staff" class="nav-link">
+        <router-link to="/dashboard/staff" class="nav-link" active-class="active">
           Сотрудники
         </router-link>
       </div>
@@ -41,9 +55,41 @@
 import StatisticsDropdown from '@/components/StatisticsDropdown.vue'
 import MenuDropdown from '@/components/MenuDropdown.vue'
 import { useDropdownState } from '@/composables/useDropdownState'
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, ref, nextTick } from 'vue'
 
 const { closeAllDropdowns } = useDropdownState()
+
+const RESTAURANT_NAME_KEY = 'reston_restaurant_name'
+const restaurantName = ref('DonerHome')
+const isRenaming = ref(false)
+const restaurantNameInput = ref('')
+const renameInputRef = ref<HTMLInputElement|null>(null)
+
+function loadRestaurantName() {
+  const saved = localStorage.getItem(RESTAURANT_NAME_KEY)
+  if (saved) restaurantName.value = saved
+}
+function saveRestaurantName(name: string) {
+  localStorage.setItem(RESTAURANT_NAME_KEY, name)
+}
+function startRename() {
+  isRenaming.value = true
+  restaurantNameInput.value = restaurantName.value
+  nextTick(() => {
+    renameInputRef.value?.focus()
+    renameInputRef.value?.select()
+  })
+}
+function finishRename() {
+  if (restaurantNameInput.value.trim()) {
+    restaurantName.value = restaurantNameInput.value.trim()
+    saveRestaurantName(restaurantName.value)
+  }
+  isRenaming.value = false
+}
+function cancelRename() {
+  isRenaming.value = false
+}
 
 const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as HTMLElement
@@ -53,6 +99,7 @@ const handleClickOutside = (event: MouseEvent) => {
 }
 
 onMounted(() => {
+  loadRestaurantName()
   document.addEventListener('click', handleClickOutside)
 })
 
@@ -154,12 +201,16 @@ onUnmounted(() => {
 .nav-link {
   color: #1a1a1a;
   text-decoration: none;
-  padding: 0.5rem 0;
+  padding: 0.5rem 1.25rem;
   position: relative;
+  border-radius: 8px;
+  transition: background 0.2s, color 0.2s;
 }
 
 .nav-link.active {
   color: #4338ca;
+  background: #e0e7ff;
+  font-weight: 600;
 }
 
 .main-content {
@@ -344,5 +395,15 @@ onUnmounted(() => {
 
 .stat-change.positive {
   color: #10b981;
+}
+
+.rename-restaurant-input {
+  font-size: 1.25rem;
+  font-weight: 600;
+  border: 1px solid #a5b4fc;
+  border-radius: 8px;
+  padding: 0.2rem 0.5rem;
+  min-width: 100px;
+  outline: none;
 }
 </style>

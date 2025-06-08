@@ -9,6 +9,8 @@ import CashShifts from '@/components/CashShifts.vue'
 import Sales from '@/components/Sales.vue'
 import Storage from '@/pages/Storage.vue'
 import EditMenu from '@/pages/EditMenu.vue'
+import HallLayout from '@/pages/HallLayout.vue'
+import Staff from '@/pages/Staff.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -55,6 +57,16 @@ const router = createRouter({
           path: 'menu/edit',
           name: 'edit-menu',
           component: EditMenu
+        },
+        {
+          path: 'hall',
+          name: 'hall-layout',
+          component: HallLayout
+        },
+        {
+          path: 'staff',
+          name: 'staff',
+          component: Staff
         }
       ]
     },
