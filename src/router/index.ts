@@ -8,6 +8,7 @@ import GeneralStatistics from '@/components/GeneralStatistics.vue'
 import CashShifts from '@/components/CashShifts.vue'
 import Sales from '@/components/Sales.vue'
 import Storage from '@/pages/Storage.vue'
+import EditMenu from '@/pages/EditMenu.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -44,6 +45,16 @@ const router = createRouter({
           path: 'sales',
           name: 'sales',
           component: Sales
+        },
+        {
+          path: 'menu/storage',
+          name: 'storage',
+          component: Storage
+        },
+        {
+          path: 'menu/edit',
+          name: 'edit-menu',
+          component: EditMenu
         }
       ]
     },
@@ -56,10 +67,6 @@ const router = createRouter({
       path: '/subscription',
       name: 'subscription',
       component: SubscriptionPage
-    },
-    {
-      path: '/menu/storage',
-      component: Storage
     }
   ]
 })

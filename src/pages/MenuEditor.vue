@@ -1,1 +1,0 @@
-<template><div>Редактор меню</div></template>

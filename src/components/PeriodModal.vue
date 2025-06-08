@@ -3,19 +3,11 @@
     <div class="modal-content" @click.stop>
       <div class="modal-header">
         <div class="date-range">
-          <div class="date-group">
-            <div class="date">{{ formatDate(selectedStartDate) || startDate }}</div>
-            <div class="time">
-              <input type="time" v-model="startTime" step="60" />
-            </div>
-          </div>
-          <div class="arrow">→</div>
-          <div class="date-group">
-            <div class="date">{{ formatDate(selectedEndDate) || endDate }}</div>
-            <div class="time">
-              <input type="time" v-model="endTime" step="60" />
-            </div>
-          </div>
+          <span class="date">{{ formatDate(selectedStartDate) || startDate }}</span>
+          <input type="time" v-model="startTime" step="60" />
+          <div class="arrow">➞</div>
+          <span class="date">{{ formatDate(selectedEndDate) || endDate }}</span>
+          <input type="time" v-model="endTime" step="60" />
         </div>
         <button class="save-btn" @click="save">Сохранить</button>
       </div>
@@ -112,7 +104,7 @@ const props = defineProps<{
   isOpen: boolean
 }>()
 
-const emit = defineEmits(['close', 'save'])
+const emit = defineEmits(['close', 'save', 'update:isOpen'])
 
 // Current displayed dates
 const startDate = ref('2 мая 2024')
@@ -255,28 +247,24 @@ const selectDate = (day: { date: Date }) => {
   }
 }
 
-const closeModal = (withSave = false) => {
-  if (!withSave) {
-    // Reset only current selection, not the saved state
-    selectedStartDate.value = savedStartDate.value
-    selectedEndDate.value = savedEndDate.value
-  }
-  emit('close')
+const closeModal = () => {
+  // Reset selection
+  selectedStartDate.value = null;
+  selectedEndDate.value = null;
+  // Emit close event
+  emit('close');
+  emit('update:isOpen', false);
 }
 
 const save = () => {
   if (selectedStartDate.value && selectedEndDate.value) {
-    // Update saved state
-    savedStartDate.value = selectedStartDate.value
-    savedEndDate.value = selectedEndDate.value
-    
     emit('save', {
       startDate: selectedStartDate.value,
       endDate: selectedEndDate.value,
       startTime: startTime.value,
       endTime: endTime.value
-    })
-    closeModal(true)
+    });
+    emit('update:isOpen', false);
   }
 }
 </script>
@@ -313,39 +301,40 @@ const save = () => {
 .date-range {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 10px;
 }
 
-.date-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  min-width: 120px;
+.date-range > * + * {
+  margin-left: 0.75rem;
+}
+
+.date-range > input[type="time"] {
+  margin-left: 0.375rem;
 }
 
 .date {
-  font-size: 1rem;
+  font-weight: 600;
   color: #1a1a1a;
+  white-space: nowrap;
 }
 
-.time {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.time input {
+.date-range input[type="time"] {
   border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  padding: 0.5rem;
+  border-radius: 8px;
+  padding: 0.75rem;
   font-size: 1rem;
-  width: 100px;
+  width: 120px;
   text-align: center;
 }
 
+.date-range input[type="time"]:focus {
+  outline: none;
+  border-color: #4338ca;
+}
+
 .arrow {
-  color: #666;
-  margin-top: 1rem;
+  color: #1a1a1a;
+  font-size: 1.25rem;
 }
 
 .save-btn {
