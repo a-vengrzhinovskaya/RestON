@@ -20,7 +20,6 @@
               <div class="cell">{{ ingredient.name }}</div>
               <div class="cell">{{ ingredient.unit }}</div>
             </div>
-            <div v-for="i in (8 - paginatedIngredients.length)" :key="`empty-${i}`" class="empty-row"></div>
           </div>
         </div>
         <div class="table-footer">
@@ -66,7 +65,6 @@
               <div class="cell">{{ position.category }}</div>
               <div class="cell">{{ position.price > 0 ? `${position.price} ₽` : '' }}</div>
             </div>
-            <div v-for="i in (8 - paginatedPositions.length)" :key="`empty-${i}`" class="empty-row"></div>
           </div>
         </div>
         <div class="table-footer">
@@ -108,7 +106,6 @@
             <div v-for="(category, index) in paginatedCategories" :key="index" class="table-row">
               <div class="cell">{{ category.name }}</div>
             </div>
-            <div v-for="i in (8 - paginatedCategories.length)" :key="`empty-${i}`" class="empty-row"></div>
           </div>
         </div>
         <div class="table-footer">
@@ -145,7 +142,10 @@
     
     <AddPositionModal
       v-model="showPositionModal"
-      :items="positions"
+      :items="positions.map(p => ({
+        ...p,
+        ingredients: getPositionIngredients(p.id)
+      }))"
       :categories="categories.map(c => c.name)"
       :ingredients-list="ingredients"
       @save="handleSavePositions"
@@ -160,10 +160,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import AddIngredientModal from '@/components/AddIngredientModal.vue'
 import AddPositionModal from '@/components/AddPositionModal.vue'
 import AddCategoryModal from '@/components/AddCategoryModal.vue'
+import { ingredients as baseIngredients, Ingredient } from '@/data/ingredients'
 
 const ITEMS_PER_PAGE = 8
 
@@ -172,54 +173,17 @@ const showIngredientModal = ref(false)
 const showPositionModal = ref(false)
 const showCategoryModal = ref(false)
 
-interface Ingredient {
-  id: number;
-  name: string;
-  unit: string;
+function loadFromStorage<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key)
+    if (raw) return JSON.parse(raw)
+  } catch {}
+  return fallback
 }
 
-interface Position {
-  id: number;
-  name: string;
-  category: string;
-  price: number;
-}
+const ingredients = ref<Ingredient[]>(loadFromStorage('editmenu_ingredients', [...baseIngredients]))
 
-interface Category {
-  id: number;
-  name: string;
-}
-
-// Данные таблиц
-const ingredients = ref<Ingredient[]>([
-  { id: 1, name: 'Курица', unit: 'кг' },
-  { id: 2, name: 'Лаваш', unit: 'шт' },
-  { id: 3, name: 'Помидоры', unit: 'кг' },
-  { id: 4, name: 'Огурцы', unit: 'кг' },
-  { id: 5, name: 'Лук', unit: 'кг' },
-  { id: 6, name: 'Капуста', unit: 'кг' },
-  { id: 7, name: 'Морковь', unit: 'кг' },
-  { id: 8, name: 'Майонез', unit: 'л' },
-  { id: 9, name: 'Кетчуп', unit: 'л' },
-  { id: 10, name: 'Соус чесночный', unit: 'л' },
-  { id: 11, name: 'Соус острый', unit: 'л' },
-  { id: 12, name: 'Сыр', unit: 'кг' },
-  { id: 13, name: 'Масло растительное', unit: 'л' },
-  { id: 14, name: 'Специи для курицы', unit: 'кг' },
-  { id: 15, name: 'Соль', unit: 'кг' },
-  { id: 16, name: 'Перец', unit: 'кг' },
-  { id: 17, name: 'Чеснок', unit: 'кг' },
-  { id: 18, name: 'Зелень', unit: 'кг' },
-  { id: 19, name: 'Картофель', unit: 'кг' },
-  { id: 20, name: 'Салфетки', unit: 'шт' },
-  { id: 21, name: 'Упаковка малая', unit: 'шт' },
-  { id: 22, name: 'Упаковка большая', unit: 'шт' },
-  { id: 23, name: 'Стаканы', unit: 'шт' },
-  { id: 24, name: 'Трубочки', unit: 'шт' },
-  { id: 25, name: 'Пакеты', unit: 'шт' },
-])
-
-const categories = ref<Category[]>([
+const categories = ref(loadFromStorage('editmenu_categories', [
   { id: 1, name: 'Шаурма' },
   { id: 2, name: 'Напитки' },
   { id: 3, name: 'Закуски' },
@@ -229,9 +193,9 @@ const categories = ref<Category[]>([
   { id: 7, name: 'Десерты' },
   { id: 8, name: 'Комбо' },
   { id: 9, name: 'Добавки' },
-])
+]))
 
-const positions = ref<Position[]>([
+const positions = ref(loadFromStorage('editmenu_positions', [
   { id: 1, name: 'Шаурма классическая', category: 'Шаурма', price: 200 },
   { id: 2, name: 'Кока-кола', category: 'Напитки', price: 100 },
   { id: 3, name: 'Шаурма острая', category: 'Шаурма', price: 220 },
@@ -251,7 +215,25 @@ const positions = ref<Position[]>([
   { id: 17, name: 'Морс', category: 'Напитки', price: 80 },
   { id: 18, name: 'Чай', category: 'Напитки', price: 50 },
   { id: 19, name: 'Кофе', category: 'Напитки', price: 100 },
-])
+]))
+
+// Загрузка ингредиентов для позиций
+interface PositionIngredients {
+  [key: number]: Array<{ name: string; quantity: number }>
+}
+
+const positionIngredients = ref<PositionIngredients>(loadFromStorage('editmenu_position_ingredients', {}))
+
+// Функция для получения ингредиентов позиции
+const getPositionIngredients = (positionId: number) => {
+  return positionIngredients.value[positionId] || []
+}
+
+// Функция для сохранения ингредиентов позиции
+const savePositionIngredients = (positionId: number, ingredients: Array<{ name: string; quantity: number }>) => {
+  positionIngredients.value[positionId] = ingredients
+  localStorage.setItem('editmenu_position_ingredients', JSON.stringify(positionIngredients.value))
+}
 
 // Пагинация
 const currentPage = {
@@ -264,53 +246,66 @@ const ingredientsTotalPages = computed(() => Math.ceil(ingredients.value.length 
 const paginatedIngredients = computed(() => {
   const start = (currentPage.ingredients.value - 1) * ITEMS_PER_PAGE;
   const end = start + ITEMS_PER_PAGE;
-  const items = ingredients.value.slice(start, end);
-  
-  while (items.length < ITEMS_PER_PAGE) {
-    items.push({ id: 0, name: '', unit: '' });
-  }
-  
-  return items;
+  return ingredients.value.slice(start, end);
 })
 
 const positionsTotalPages = computed(() => Math.ceil(positions.value.length / ITEMS_PER_PAGE))
 const paginatedPositions = computed(() => {
   const start = (currentPage.positions.value - 1) * ITEMS_PER_PAGE;
   const end = start + ITEMS_PER_PAGE;
-  const items = positions.value.slice(start, end);
-  
-  while (items.length < ITEMS_PER_PAGE) {
-    items.push({ id: 0, name: '', category: '', price: 0 });
-  }
-  
-  return items;
+  return positions.value.slice(start, end);
 })
 
 const categoriesTotalPages = computed(() => Math.ceil(categories.value.length / ITEMS_PER_PAGE))
 const paginatedCategories = computed(() => {
   const start = (currentPage.categories.value - 1) * ITEMS_PER_PAGE;
   const end = start + ITEMS_PER_PAGE;
-  const items = categories.value.slice(start, end);
-  
-  while (items.length < ITEMS_PER_PAGE) {
-    items.push({ id: 0, name: '' });
-  }
-  
-  return items;
+  return categories.value.slice(start, end);
 })
 
 // Обработчики сохранения
-const handleSaveIngredients = (newIngredients: Ingredient[]) => {
-  ingredients.value = newIngredients;
+const handleSaveIngredients = (newIngredients: { name: string; unit: string }[]) => {
+  ingredients.value = newIngredients.map(i => ({
+    id: Date.now() + Math.random(),
+    name: i.name,
+    unit: (i.unit as 'кг' | 'шт' | 'л') ?? 'шт',
+  }));
 };
 
-const handleSavePositions = (newPositions: Position[]) => {
-  positions.value = newPositions;
+const handleSavePositions = (newPositions: { name: string; category: string; price: number; ingredients?: Array<{ name: string; quantity: number }> }[]) => {
+  positions.value = newPositions.map(p => ({
+    id: Date.now() + Math.random(),
+    name: p.name,
+    category: p.category,
+    price: p.price,
+  }));
+  // Сохраняем ингредиенты для каждой позиции
+  newPositions.forEach((p, index) => {
+    if (p.ingredients) {
+      savePositionIngredients(positions.value[index].id, p.ingredients)
+    }
+  })
 };
 
-const handleSaveCategories = (newCategories: Category[]) => {
-  categories.value = newCategories;
+const handleSaveCategories = (newCategories: { name: string }[]) => {
+  categories.value = newCategories.map((c: { name: string }) => ({
+    id: Date.now() + Math.random(),
+    name: c.name,
+  }));
 };
+
+watch(ingredients, val => {
+  localStorage.setItem('editmenu_ingredients', JSON.stringify(val))
+}, { deep: true })
+watch(categories, val => {
+  localStorage.setItem('editmenu_categories', JSON.stringify(val))
+}, { deep: true })
+watch(positions, val => {
+  localStorage.setItem('editmenu_positions', JSON.stringify(val))
+}, { deep: true })
+watch(positionIngredients, val => {
+  localStorage.setItem('editmenu_position_ingredients', JSON.stringify(val))
+}, { deep: true })
 </script>
 
 <style scoped>
@@ -423,7 +418,9 @@ const handleSaveCategories = (newCategories: Category[]) => {
 }
 
 .table-body {
-  height: 480px; /* 8 строк * 60px (высота строки с отступами) */
+  min-height: 480px; /* 8 строк * 60px (высота строки с отступами) */
+  display: flex;
+  flex-direction: column;
 }
 
 .table-row {
@@ -432,12 +429,6 @@ const handleSaveCategories = (newCategories: Category[]) => {
   display: grid;
   align-items: center;
   height: 60px; /* Фиксированная высота для каждой строки */
-}
-
-/* Пустые строки для поддержания высоты */
-.empty-row {
-  height: 60px;
-  border-bottom: 1px solid #f8f9fa;
 }
 
 .cell {

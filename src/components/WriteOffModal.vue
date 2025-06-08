@@ -19,18 +19,17 @@
         <div class="form-rows">
           <div v-for="(item, index) in selectedItems" :key="index" class="form-row">
             <div class="input-group">
-              <input type="text" v-model="item.name" placeholder="Название" @change="updateUnit(index, item.name)" />
-            </div>
-            <div class="input-group quantity">
-              <input type="text" v-model="item.quantity" placeholder="0" />
-              <select v-model="item.unit" class="unit-select">
-                <option value="шт">шт</option>
-                <option value="кг">кг</option>
-                <option value="л">л</option>
+              <select v-model="item.name" @change="updateUnit(index, item.name)">
+                <option value="" disabled>Выберите позицию</option>
+                <option v-for="storeItem in availableItems" :key="storeItem.name" :value="storeItem.name">{{ storeItem.name }}</option>
               </select>
             </div>
+            <div class="input-group quantity">
+              <input type="number" v-model.number="item.quantity" :max="getMaxQuantity(item.name) ?? undefined" min="0" :placeholder="getMaxQuantity(item.name) ? '0 - ' + getMaxQuantity(item.name) : '0'" />
+              <span class="unit-label">{{ getUnit(item.name) }}</span>
+            </div>
             <button class="delete-btn" @click="removeItem(index)">
-              <span class="trash-icon">🗑</span>
+              <span class="material-icons delete-icon">delete</span>
             </button>
           </div>
         </div>
@@ -131,6 +130,18 @@ const closeModal = () => {
 
 const save = () => {
   handleSave()
+}
+
+// Получить максимальное количество для списания по названию
+function getMaxQuantity(name: string): number | null {
+  const found = store.getItemByName(name)
+  return found ? found.quantity : null
+}
+
+// Получить единицу измерения по названию
+function getUnit(name: string): string {
+  const found = store.getItemByName(name)
+  return found ? found.unit : ''
 }
 </script>
 
@@ -301,5 +312,47 @@ const save = () => {
 
 .save-btn:hover {
   opacity: 0.9;
+}
+
+.delete-icon {
+  color: #b0b0b0;
+  font-size: 20px;
+  cursor: pointer;
+  transition: color 0.2s;
+  user-select: none;
+}
+
+.delete-icon:hover {
+  color: #ef4444;
+}
+
+.unit-label {
+  margin-left: 0.5em;
+  color: #6B7280;
+  font-size: 0.95em;
+  min-width: 2em;
+  display: inline-block;
+}
+
+/* Селектор ингредиента как input */
+.input-group select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: #fff;
+  color: #1a1a1a;
+  outline: none;
+  box-sizing: border-box;
+  transition: border 0.2s;
+  height: 44px;
+  appearance: none;
+}
+.input-group select:focus {
+  border-color: #4338ca;
+}
+.input-group select::-ms-expand {
+  display: none;
 }
 </style> 
